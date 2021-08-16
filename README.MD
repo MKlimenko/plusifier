@@ -1,6 +1,14 @@
 # C library plusifier
 
-A header-only helper library to pack the multiple type-dependent C-style function into single overload, deduced at compile-time. No external libraries required.
+A header-only helper library to pack the multiple type-dependent C-style functions into single overload deduced at compile-time. No external libraries are required.
+
+- [C library plusifier](#c-library-plusifier)
+  - [Motivation](#motivation)
+  - [Usage and examples](#usage-and-examples)
+    - [Function overloading](#function-overloading)
+    - [Pointer automation](#pointer-automation)
+  - [Under the hood](#under-the-hood)
+    - [Internals of the class](#internals-of-the-class)
 
 ## Motivation
 
@@ -67,7 +75,7 @@ It will check if the passed arguments are viable to be used as the arguments for
 
 ### Pointer automation
 
-RAII is the lifesaver in the modern C++. However, it's a bit tedious to mix it with the C-style allocations. One of the approaches would be to use the `std::unique_ptr` with a custom deleter, but it's quite excess, so I decided to expand this library a little bit more.
+RAII is the lifesaver in modern C++. However, it's a bit tedious to mix it with the C-style allocations. One of the approaches would be to use the `std::unique_ptr` with a custom deleter, but it's quite excess, so I decided to expand this library a little bit more.
 
 For example, we might have a specified allocation functions for various types:
 
@@ -91,3 +99,19 @@ auto ippsMalloc = plusifier::FunctionWrapper(ippsMalloc_8u, ippsMalloc_16u, ipps
 
 auto ptr = plusifier::PointerWrapper<Ipp8u, ippsFree>(ippsMalloc, size);
 ```
+
+## Under the hood
+### Internals of the class
+
+`FunctionWrapper` is a variadic template class with the types being the function pointers:
+
+```cpp
+template <typename ... F>
+class FunctionWrapper  final {
+        static_assert(sizeof...(F) != 0, "FunctionWrapper should be not empty");
+        std::tuple<F...> var;
+        constexpr static inline std::size_t pack_size = sizeof...(F);
+};
+```
+
+First `static_assert` is used to create a legit compile-time error when there are no functions passed. `std::tuple` is a heterogeneous container to store those function pointers, and a `pack_size` is a simple helper constant.

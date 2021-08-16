@@ -7,8 +7,7 @@
 
 namespace plusifier {
     template <typename ... F>
-    class FunctionWrapper {
-    protected:
+    class FunctionWrapper final {
         static_assert(sizeof...(F) != 0, "FunctionWrapper should be not empty");
         std::tuple<F...> var;
         constexpr static inline std::size_t pack_size = sizeof...(F);
