@@ -9,6 +9,8 @@ A header-only helper library to pack the multiple type-dependent C-style functio
     - [Pointer automation](#pointer-automation)
   - [Under the hood](#under-the-hood)
     - [Internals of the class](#internals-of-the-class)
+    - [`operator()`](#operator)
+    - [Function verification](#function-verification)
 
 ## Motivation
 
@@ -115,3 +117,37 @@ class FunctionWrapper  final {
 ```
 
 First `static_assert` is used to create a legit compile-time error when there are no functions passed. `std::tuple` is a heterogeneous container to store those function pointers, and a `pack_size` is a simple helper constant.
+
+Due to the fact, that there are no references and move semantics in pure C, I've decided to omit the [perfect forwarding](https://eli.thegreenplace.net/2014/perfect-forwarding-and-universal-references-in-c) and pass the parameter pack in the constructor as-is, so the constructor is extremely trivial:
+
+```cpp
+FunctionWrapper(F ... functions) : var(functions...) {}
+```
+
+Then there is a function call operator (`operator()`), overload search and verification routines and small helper functions and classes.
+
+### `operator()`
+
+Function call operator may be split into two parts: compile-time and run-time. First is used to select the correct overload or to indicate the lack of one, while the runtime calls the selected function.
+
+```cpp
+template <typename ... Args>
+auto operator()(Args ... args) const {
+    // compile-time
+    constexpr auto verification_result = VerifyOverload<0, Args...>();
+    if constexpr (!verification_result)
+        static_assert(NoOverloadFound<F...>(), "No suitable overload is found");
+
+    // run-time
+    return std::get<verification_result>(var)(args...);
+}
+```
+
+Here the `verification_result` variable is an object of a simple helper struct with two fields and conversion operators. In the first place, I wanted to use a structured binding, but the compiler told me I'm not supposed to. This struct contains index of the function inside the tuple and the fact that the correct overload has been found. This flag ended up there due to the recursive nature of the used template metaprogramming approach.
+
+Verification starts at index 0 and iterates up to the end of the tuple. 
+
+### Function verification
+Every iteration, I get the function pointer signature from the tuple, as well as the `std::function` signature to ease the following metaprogramming. Then there's an excellent function `std::is_invocable_v` in the standard library, that allows me to check if the function pointer in the tuple may be called with the type pack passed to the `operator()`. If we're good, we would prematurely quit the function, otherwise we'll continue iterating, until the very end of the tuple. 
+
+If there's no suitable overload, a function with a failing `static_assert` is called for a better error diagnostics.
