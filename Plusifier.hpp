@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <functional>
 #include <memory>
 #include <tuple>
 
@@ -13,11 +12,11 @@ namespace plusifier {
         constexpr static inline std::size_t pack_size = sizeof...(F);
 
         template<typename T>
-        struct NumberOfArguments;
+        struct ReturnType;
 
         template<typename R, typename ...Args>
-        struct NumberOfArguments<std::function<R(Args...)>> {
-            constexpr static std::size_t value = sizeof...(Args);
+        struct ReturnType<R(*)(Args...)> {
+            using type = R;
         };
 
         template <typename ... Args>
@@ -41,9 +40,8 @@ namespace plusifier {
         template <std::size_t function_number, typename ... Args>
         constexpr static auto VerifyOverload() {
             using function_pointer_signature = std::remove_reference_t<decltype(std::get<function_number>(var))>;
-            using std_function_signature = decltype(std::function{ function_pointer_signature{} });
 
-            constexpr bool is_invokable = std::is_invocable_v<std_function_signature, Args...>;
+            constexpr bool is_invokable = std::is_invocable_v<function_pointer_signature, Args...>;
 
             if constexpr (is_invokable)
                 return VerificationResult{ function_number, true };
@@ -57,11 +55,10 @@ namespace plusifier {
         template <std::size_t function_number, typename T, typename ... Args>
         constexpr static auto VerifyOverloadByReturnType() {
             using function_pointer_signature = std::remove_reference_t<decltype(std::get<function_number>(var))>;
-            using std_function_signature = decltype(std::function{ function_pointer_signature{} });
 
-            constexpr bool is_invokable = std::is_invocable_v<std_function_signature, Args...>;
+            constexpr bool is_invokable = std::is_invocable_v<function_pointer_signature, Args...>;
 
-            if constexpr (is_invokable && std::is_same_v<T, typename std_function_signature::result_type>)
+            if constexpr (is_invokable && std::is_same_v<T, typename ReturnType<function_pointer_signature>::type>)
                 return VerificationResult{ function_number, true };
 
             if constexpr (function_number + 1 < pack_size)
