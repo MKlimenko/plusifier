@@ -61,7 +61,7 @@ namespace plusifier {
 
             constexpr bool is_invokable = std::is_invocable_v<std_function_signature, Args...>;
 
-            if constexpr (is_invokable && std::is_same_v<T, std_function_signature::result_type>)
+            if constexpr (is_invokable && std::is_same_v<T, typename std_function_signature::result_type>)
                 return VerificationResult{ function_number, true };
 
             if constexpr (function_number + 1 < pack_size)
@@ -100,6 +100,6 @@ namespace plusifier {
         PointerWrapper(F alloc_fn, Args ... args) : pointer(alloc_fn(args...), D) {}
 
         template <typename ... F, typename ... Args>
-        PointerWrapper(FunctionWrapper<F...> alloc_fn, Args ... args) : pointer(alloc_fn.OverloadByReturnType<T*>(args...), D) {}
+        PointerWrapper(FunctionWrapper<F...> alloc_fn, Args ... args) : pointer(alloc_fn.template OverloadByReturnType<T*>(args...), D) {}
     };
 }
