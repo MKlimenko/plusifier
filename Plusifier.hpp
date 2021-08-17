@@ -68,10 +68,10 @@ namespace plusifier {
         }
 
     public:
-        FunctionWrapper(F ... functions) : var(functions...) {}
+        constexpr FunctionWrapper(F ... functions) : var(functions...) {}
 
         template <typename ... Args>
-        auto operator()(Args ... args) const {
+        constexpr auto operator()(Args ... args) const {
             constexpr auto verification_result = VerifyOverload<0, Args...>();
             if constexpr (!verification_result)
                 static_assert(NoOverloadFound<F...>(), "No suitable overload is found");
@@ -80,7 +80,7 @@ namespace plusifier {
         }
 
         template <typename T, typename ... Args>
-        auto OverloadByReturnType(Args ... args) const {
+        constexpr auto OverloadByReturnType(Args ... args) const {
             constexpr auto verification_result = VerifyOverloadByReturnType<0, T, Args...>();
             if constexpr (!verification_result)
                 static_assert(NoOverloadFound<F...>(), "No suitable overload is found");
