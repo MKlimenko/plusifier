@@ -98,5 +98,9 @@ namespace plusifier {
 
         template <typename ... F, typename ... Args>
         PointerWrapper(FunctionWrapper<F...> alloc_fn, Args ... args) : pointer(alloc_fn.template OverloadByReturnType<T*>(args...), D) {}
+
+        operator T* () {
+            return pointer.get();
+        }
     };
 }
