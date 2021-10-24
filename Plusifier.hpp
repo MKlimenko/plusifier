@@ -93,6 +93,8 @@ namespace plusifier {
     class PointerWrapper {
         std::unique_ptr<T, decltype(D)> pointer;
     public:
+        PointerWrapper() : pointer(nullptr, D) {}
+    	
         template <typename F, typename ... Args>
         PointerWrapper(F alloc_fn, Args ... args) : pointer(alloc_fn(args...), D) {}
 
